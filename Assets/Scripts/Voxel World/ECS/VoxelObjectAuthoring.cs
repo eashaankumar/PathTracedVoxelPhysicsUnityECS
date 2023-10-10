@@ -23,6 +23,17 @@ namespace VoxelWorld.ECS.VoxelObject
             
         }
 
+        public float3 LocalGridToLocalWorld(int3 localGrid)
+        {
+            return (float3)localGrid * voxelSize;
+        }
+
+        public float3 LocalGridToWorldPos(int3 localGrid, float4x4 localToWorld)
+        {
+            return math.mul(localToWorld, new float4(LocalGridToLocalWorld(localGrid), 1)).xyz;
+        }
+    
+
         public void Dispose()
         {
             if (standardVoxels.IsCreated)

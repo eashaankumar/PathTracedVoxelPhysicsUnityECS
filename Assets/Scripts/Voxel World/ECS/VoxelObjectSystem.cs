@@ -48,21 +48,14 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
 
                 #region Voxel Obj
                 var voxObj = new VoxelObjectComponent(voxelSize);
-                voxObj.standardVoxels.Add(0, new StandardMaterialData
-                {
-                    albedo = randomVoxGenerator.RandColor(),
-                    specular = 0,
-                    emission = 0,
-                    smoothness = 0,
-                    metallic = 0,
-                    ior = 0
-                });
+                CreateRandomVoxelObject(ref voxObj);
+                
                 state.EntityManager.AddComponentData(entity, voxObj);
                 state.EntityManager.AddComponentData(entity, new LocalTransform
                 {
                     Position = randomVoxGenerator.RandPos(0, 10),
                     Rotation = quaternion.identity,
-                    Scale = voxelSize,
+                    Scale = 1,
                 });
                 state.EntityManager.AddComponent(entity, typeof(LocalToWorld));
 
@@ -95,13 +88,13 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                 state.EntityManager.AddComponentData(entity, physicsCollider);
                 state.EntityManager.AddComponentData(entity, new PhysicsVelocity
                 {
-                    Linear = 5,
+                    Linear = 0,
                     Angular = 0,
                 });
 
                 state.EntityManager.AddComponentData(entity, new PhysicsGravityFactor
                 {
-                    Value = 1
+                    Value = 0
                 });
 
                 
@@ -125,14 +118,37 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
 
             foreach (var (voxObj, trans) in SystemAPI.Query<RefRO<VoxelObjectComponent>, RefRO<LocalToWorld>>())
             {
-                foreach(var voxKVP in voxObj.ValueRO.standardVoxels)
+                #region Standard voxels
+                if (voxObj.ValueRO.standardVoxels.Count() > 0)
                 {
-                    assembler.standardMaterialAssembly.Add(new StandardVoxelAssembledData
+                    
+                    foreach (var voxKVP in voxObj.ValueRO.standardVoxels)
                     {
-                        material = voxKVP.Value,
-                        trs = trans.ValueRO.Value
-                    });
+                        var t = voxObj.ValueRO.LocalGridToWorldPos(voxKVP.Key, trans.ValueRO.Value);
+                        assembler.standardMaterialAssembly.Add(new StandardVoxelAssembledData
+                        {
+                            material = voxKVP.Value,
+                            trs = float4x4.TRS(t, trans.ValueRO.Rotation, voxObj.ValueRO.voxelSize)
+                        });
+                    }
                 }
+                #endregion
+
+                #region Glass voxels
+                if (voxObj.ValueRO.glassVoxels.Count() > 0)
+                {
+
+                    foreach (var voxKVP in voxObj.ValueRO.glassVoxels)
+                    {
+                        var t = voxObj.ValueRO.LocalGridToWorldPos(voxKVP.Key, trans.ValueRO.Value);
+                        assembler.glassMaterialAssembly.Add(new GlassVoxelAssembledData
+                        {
+                            material = voxKVP.Value,
+                            trs = float4x4.TRS(t, trans.ValueRO.Rotation, voxObj.ValueRO.voxelSize)
+                        });
+                    }
+                }
+                #endregion
             }
             #endregion
 
@@ -152,6 +168,28 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
             #endregion
 
             assembler.Dispose();
+        }
+
+        void CreateRandomVoxelObject(ref VoxelObjectComponent voxObj)
+        {
+            voxObj.standardVoxels.Add(0, new StandardMaterialData
+            {
+                albedo = randomVoxGenerator.RandColor(),
+                specular = 0,
+                emission = 0,
+                smoothness = 0,
+                metallic = 0,
+                ior = 0
+            });
+            voxObj.glassVoxels.Add(new int3(1, 0, 0), new GlassMaterialData
+            {
+                albedo = randomVoxGenerator.RandColor(),
+                emission = 0,
+                roughness = 0.5f,
+                extinctionCoeff = 1,
+                ior = 2.0f
+            });
+
         }
 
     }
