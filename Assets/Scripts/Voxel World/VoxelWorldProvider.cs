@@ -5,11 +5,11 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using VoxelWorldTemp.Rendering.AbstractClasses;
-using VoxelWorldTemp.Rendering.Interfaces;
-using VoxelWorldTemp.Rendering.Structs;
+using VoxelWorld.Rendering.AbstractClasses;
+using VoxelWorld.Rendering.Interfaces;
+using VoxelWorld.Rendering.Structs;
 
-namespace VoxelWorldTemp.Rendering
+namespace VoxelWorld.Rendering
 {
     public class VoxelWorldProvider : AbstractVoxelWorldInstancedRendererProviderMonoBehaviour
     {
@@ -110,7 +110,7 @@ namespace VoxelWorldTemp.Rendering
                             {
                                 albedo = RandColor(index),
                                 specular = RandSpecular(),
-                                emission = RandColor(index) * random.NextFloat(0f, 1f),
+                                emission = 0,//RandColor(index) * random.NextFloat(0f, 1f),
                                 smoothness = random.NextFloat(0f, 1f),
                                 metallic = random.NextFloat(0f, 1f),
                                 ior = random.NextFloat(0f, 1f)
@@ -127,9 +127,9 @@ namespace VoxelWorldTemp.Rendering
                             material = new GlassMaterialData
                             {
                                 albedo = RandColor(index),
-                                emission = RandColor(index) * random.NextFloat(0f, 1.1f),
+                                emission = random.NextBool() ? RandColor(index) * random.NextFloat(0f, 1.1f) : 0,
                                 ior = random.NextFloat(1.0f, 2.8f),
-                                roughness = random.NextFloat(0f, 0.5f),
+                                roughness = 0.5f,//random.NextFloat(0f, 0.5f),
                                 extinctionCoeff = random.NextFloat(0f, 10f),
                                 flatShading = random.NextBool() ? 1 : 0,
                             },

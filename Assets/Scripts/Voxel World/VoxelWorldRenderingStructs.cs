@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
-using VoxelWorldTemp.Rendering.Enums;
-using VoxelWorldTemp.Rendering.Interfaces;
-using VoxelWorldTemp.Rendering.Structs;
+using VoxelWorld.Rendering.Enums;
+using VoxelWorld.Rendering.Interfaces;
+using VoxelWorld.Rendering.Structs;
 
-namespace VoxelWorldTemp.Rendering.Enums
+namespace VoxelWorld.Rendering.Enums
 {
     [System.Serializable]
     public enum PathTracingResolution
@@ -16,7 +16,7 @@ namespace VoxelWorldTemp.Rendering.Enums
     }
 }
 
-namespace VoxelWorldTemp.Rendering.GlobalClasses
+namespace VoxelWorld.Rendering.GlobalClasses
 {
     public static class PathTracingResolutionHandler
     {
@@ -24,7 +24,7 @@ namespace VoxelWorldTemp.Rendering.GlobalClasses
     }
 }
 
-namespace VoxelWorldTemp.Rendering.Structs
+namespace VoxelWorld.Rendering.Structs
 {
     public struct VoxelWorldInstancedRenderer : System.IDisposable
     {
@@ -95,7 +95,7 @@ namespace VoxelWorldTemp.Rendering.Structs
     }
 }
 
-namespace VoxelWorldTemp.Rendering.Interfaces
+namespace VoxelWorld.Rendering.Interfaces
 {
     public interface IVoxelWorldInstancedRendererProvider
     {
@@ -104,7 +104,7 @@ namespace VoxelWorldTemp.Rendering.Interfaces
     }
 }
 
-namespace VoxelWorldTemp.Rendering.AbstractClasses
+namespace VoxelWorld.Rendering.AbstractClasses
 {
     public abstract class AbstractVoxelWorldInstancedRendererProviderMonoBehaviour : MonoBehaviour, IVoxelWorldInstancedRendererProvider
     {

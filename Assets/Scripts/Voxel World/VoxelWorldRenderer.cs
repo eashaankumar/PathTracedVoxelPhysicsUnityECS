@@ -1,15 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Entities;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
-using VoxelWorldTemp.Rendering.AbstractClasses;
-using VoxelWorldTemp.Rendering.Enums;
-using VoxelWorldTemp.Rendering.GlobalClasses;
-using VoxelWorldTemp.Rendering.Interfaces;
-using VoxelWorldTemp.Rendering.Structs;
+using VoxelWorld.Rendering.AbstractClasses;
+using VoxelWorld.Rendering.Enums;
+using VoxelWorld.Rendering.GlobalClasses;
+using VoxelWorld.Rendering.Interfaces;
+using VoxelWorld.Rendering.Structs;
 
-namespace VoxelWorldTemp.Rendering
+namespace VoxelWorld.Rendering
 {
     public class VoxelWorldRenderer : MonoBehaviour
     {

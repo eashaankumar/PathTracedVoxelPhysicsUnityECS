@@ -373,7 +373,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_xSensitivity: 200
   m_ySensitivity: 200
-  speed: 200
+  speed: 500
   m_camera: {fileID: 963194227}
   m_cursorLockedEvent:
     m_PersistentCalls:
@@ -424,13 +424,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   seed: 61651
-  numVoxels: 1000
+  numVoxels: 10000
   spawnRadiusMinMax:
     x: 0
-    y: 100
+    y: 10
   spawnSizeMinMax:
     x: 0.5
-    y: 10
+    y: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
