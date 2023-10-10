@@ -10,7 +10,7 @@ namespace VoxelWorld.ECS.VoxelObject.MonoBehaviors
 {
     public class ECSVoxelData : MonoBehaviour
     {
-        public NativeParallelHashMap<int, NativeParallelHashMap<int3, StandardMaterialData>> standardMap;
+        /*public NativeParallelHashMap<int, NativeParallelHashMap<int3, StandardMaterialData>> standardMap;
         public NativeParallelHashMap<int, NativeParallelHashMap<int3, GlassMaterialData>> glassMap;
 
         public static ECSVoxelData Instance;
@@ -52,6 +52,6 @@ namespace VoxelWorld.ECS.VoxelObject.MonoBehaviors
                     kvp.Value.Dispose();
                 }
             }
-        }
+        }*/
     }
 }

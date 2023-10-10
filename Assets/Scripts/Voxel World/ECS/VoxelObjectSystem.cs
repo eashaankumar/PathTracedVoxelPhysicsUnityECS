@@ -10,37 +10,57 @@ using VoxelWorld.ECS.VoxelObject.MonoBehaviors;
 using Unity.Transforms;
 using VoxelWorld.Rendering.Structs;
 using Unity.Jobs;
+using System;
 
 namespace VoxelWorld.ECS.VoxelObject.Systems
 {
     [BurstCompile]
     public partial struct VoxelObjectCreateSystem : ISystem
     {
-        
+        EntityQuery query_renderentities;
+        RandomVoxelGenerator randomVoxGenerator;
+
         [BurstCompile]
         void ISystem.OnCreate(ref SystemState state)
         {
-            
-
+            randomVoxGenerator = new RandomVoxelGenerator(24451245);
+            query_renderentities = state.GetEntityQuery(ComponentType.ReadOnly<VoxelObjectComponent>(), ComponentType.ReadOnly<LocalToWorld>());
         }
 
         [BurstCompile]
         void ISystem.OnDestroy(ref SystemState state)
         {
-            
+            foreach (var vox in SystemAPI.Query<RefRW<VoxelObjectComponent>>())
+            {
+                vox.ValueRW.Dispose();
+            }
         }
 
         [BurstCompile]
         void ISystem.OnUpdate(ref SystemState state) 
         {
-            if (ECSVoxelData.Instance == null) return;
-            if (Input.GetMouseButton(0))
+            //if (ECSVoxelData.Instance == null) return;
+            if (Input.GetMouseButtonDown(0))
             {
                 Entity entity = state.EntityManager.CreateEntity();
                 
                 float voxelSize = 0.5f;
-                state.EntityManager.AddComponentData(entity, new VoxelObjectComponent { voxelSize= voxelSize });
-                state.EntityManager.AddComponentData(entity, new LocalToWorld { Value = float4x4.TRS(0, quaternion.identity, voxelSize) });
+                var voxObj = new VoxelObjectComponent(voxelSize);
+                voxObj.standardVoxels.Add(0, new StandardMaterialData
+                {
+                    albedo = randomVoxGenerator.RandColor(),
+                    specular = 0,
+                    emission = 0,
+                    smoothness = 0,
+                    metallic = 0,
+                    ior = 0
+                });
+                state.EntityManager.AddComponentData(entity, voxObj);
+                state.EntityManager.AddComponentData(entity, 
+                    new LocalToWorld 
+                    { 
+                        Value = float4x4.TRS(randomVoxGenerator.RandPos(0, 10), quaternion.identity, voxelSize) 
+                    });
 
                 #region physics
                 BoxGeometry boxGeometry = new BoxGeometry
@@ -77,18 +97,72 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                     metallic = 0,
                     ior = 0,
                 });
-                ECSVoxelData.Instance.standardMap.Add(entity.Index, map);
+                //ECSVoxelData.Instance.standardMap.Add(entity.Index, map);
             }
 
-            int count = 0;
-            foreach(RefRO<VoxelObjectComponent> r in SystemAPI.Query<RefRO<VoxelObjectComponent>>())
+            int count = query_renderentities.CalculateEntityCount();
+            #region Assembler
+            RendererAssembler assembler = new RendererAssembler((int)count, (int)count, Allocator.TempJob);
+
+            foreach (var (voxObj, trans) in SystemAPI.Query<RefRO<VoxelObjectComponent>, RefRO<LocalToWorld>>())
             {
-                count++;
+                foreach(var voxKVP in voxObj.ValueRO.standardVoxels)
+                {
+                    assembler.standardMaterialAssembly.Add(new StandardVoxelAssembledData
+                    {
+                        material = voxKVP.Value,
+                        trs = trans.ValueRO.Value
+                    });
+                }
             }
+            #endregion
+
+            #region cache
+            if (ECSVoxelWorldRendererProvider.Instance.renderer.IsCreated)
+            {
+                ECSVoxelWorldRendererProvider.Instance.renderer.Dispose();
+            } 
+            ECSVoxelWorldRendererProvider.Instance.renderer = new VoxelWorldInstancedRenderer(assembler.standardMaterialAssembly.Length, assembler.glassMaterialAssembly.Length, Allocator.Persistent);
+
+            PopulateRendererCacheJob job = new PopulateRendererCacheJob
+            {
+                assembler = assembler,
+                rendererCache = ECSVoxelWorldRendererProvider.Instance.renderer,
+            };
+            job.Schedule(assembler.standardMaterialAssembly.Length + assembler.glassMaterialAssembly.Length, 64).Complete();
+            #endregion
+
+            assembler.Dispose();
+        }
+
+    }
+
+    public struct RandomVoxelGenerator
+    {
+        public Unity.Mathematics.Random random;
+
+        public RandomVoxelGenerator(uint seed)
+        {
+            random = new Unity.Mathematics.Random(seed);
+        }
+        public float3 RandColor()
+        {
+            int index = random.NextInt();
+            return new float3(math.sin(index) * 0.5f + 0.5f, math.cos(index) * 0.5f + 0.5f, math.tan(index) * 0.5f + 0.5f);
+        }
+
+        public float3 RandSpecular()
+        {
+            return new float3(random.NextFloat(0f, 1f), random.NextFloat(0f, 1f), random.NextFloat(0f, 1f));
+        }
+
+        public float3 RandPos(float3 center, float radius)
+        {
+            return random.NextFloat3(0, 1) * radius + center;
         }
     }
 
-    [BurstCompile]
+    /*[BurstCompile]
     public partial struct VoxelObjectRendererSystem : ISystem
     {
         EntityQuery query_renderentities;
@@ -103,7 +177,7 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
         [BurstCompile]
         void OnUpdate(ref SystemState state)
         {
-            if (ECSVoxelData.Instance == null) return;
+            //if (ECSVoxelData.Instance == null) return;
             // renderer
             RendererAssembler assembler = new RendererAssembler((int)100000, (int)100000, Allocator.TempJob);
             new AssemblerJob
@@ -133,7 +207,7 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
             int count = query_renderentities.CalculateEntityCount();
             Debug.Log(count);
         }
-    }
+    }*/
 
     [BurstCompile]
     struct PopulateRendererCacheJob : IJobParallelFor
