@@ -284,7 +284,7 @@ namespace VoxelWorld.Rendering
                 rayTracingShader.Dispatch("MainRayGenShader", (int)cameraWidth, (int)cameraHeight, 1, Camera.main);
 
                 convergenceStep++;
-                convergenceStep %= 5;
+                convergenceStep %= 1;
             }
 
             MetaShader();

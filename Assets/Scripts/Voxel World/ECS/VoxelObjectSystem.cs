@@ -168,28 +168,48 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
             #endregion
 
             assembler.Dispose();
+            Debug.Log(count);
         }
 
         void CreateRandomVoxelObject(ref VoxelObjectComponent voxObj)
         {
-            voxObj.standardVoxels.Add(0, new StandardMaterialData
+            int3 dim = randomVoxGenerator.random.NextInt3(new int3(-3, -2, -4), new int3(1, 3, 2));
+            if (dim.x == 0) dim.x++;
+            if (dim.y == 0) dim.y++;
+            if (dim.z == 0) dim.z++;
+            for(int x = 0; x < math.abs(dim.x); x++)
             {
-                albedo = randomVoxGenerator.RandColor(),
-                specular = 0,
-                emission = 0,
-                smoothness = 0,
-                metallic = 0,
-                ior = 0
-            });
-            voxObj.glassVoxels.Add(new int3(1, 0, 0), new GlassMaterialData
-            {
-                albedo = randomVoxGenerator.RandColor(),
-                emission = 0,
-                roughness = 0.5f,
-                extinctionCoeff = 1,
-                ior = 2.0f
-            });
-
+                for (int y = 0; y < math.abs(dim.y); y++)
+                {
+                    for (int z = 0; z < math.abs(dim.z); z++)
+                    {
+                        int3 offset = new int3(x, y, z);
+                        if (randomVoxGenerator.random.NextBool())
+                        {
+                            voxObj.standardVoxels.Add(offset, new StandardMaterialData
+                            {
+                                albedo = randomVoxGenerator.RandColor(),
+                                specular = 0,
+                                emission = 0,
+                                smoothness = 0,
+                                metallic = 0,
+                                ior = 0
+                            });
+                        }
+                        else
+                        {
+                            voxObj.glassVoxels.Add(offset, new GlassMaterialData
+                            {
+                                albedo = randomVoxGenerator.RandColor(),
+                                emission = 0,
+                                roughness = 0.5f,
+                                extinctionCoeff = 1,
+                                ior = 2.0f
+                            });
+                        }
+                    }
+                }
+            }
         }
 
     }
