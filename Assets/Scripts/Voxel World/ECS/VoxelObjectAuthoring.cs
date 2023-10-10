@@ -44,6 +44,11 @@ namespace VoxelWorld.ECS.VoxelObject
         }
     }
 
+    public struct VoxelObjectColliderComponent : IComponentData
+    {
+
+    }
+
     [InternalBufferCapacity(16)]
     public struct VoxelData : IBufferElementData
     {
