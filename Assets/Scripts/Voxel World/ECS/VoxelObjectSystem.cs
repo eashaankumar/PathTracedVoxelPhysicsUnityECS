@@ -71,13 +71,14 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                     Orientation = quaternion.identity,
                 };
                 var collider = Unity.Physics.BoxCollider.Create(boxGeometry, CollisionFilter.Default);
-                state.EntityManager.AddComponentData(entity, new PhysicsCollider
+                PhysicsCollider physicsCollider = new PhysicsCollider
                 {
                     Value = collider
-                });
+                };
+                state.EntityManager.AddComponentData(entity, physicsCollider);
                 state.EntityManager.AddComponentData(entity, new PhysicsVelocity
                 {
-                    Linear = 0,
+                    Linear = 5,
                     Angular = 0,
                 });
 
@@ -85,6 +86,10 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                 {
                     Value = 1
                 });
+
+                
+                PhysicsMass pm = PhysicsMass.CreateDynamic(physicsCollider.MassProperties, voxelSize * 1.2f);
+                state.EntityManager.AddComponentData(entity, pm);
                 #endregion
 
                 var map = new NativeParallelHashMap<int3, StandardMaterialData>(100000, Allocator.Persistent);
