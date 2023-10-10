@@ -45,6 +45,8 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                 Entity entity = state.EntityManager.CreateEntity();
                 
                 float voxelSize = 0.5f;
+
+                #region Voxel Obj
                 var voxObj = new VoxelObjectComponent(voxelSize);
                 voxObj.standardVoxels.Add(0, new StandardMaterialData
                 {
@@ -56,11 +58,25 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                     ior = 0
                 });
                 state.EntityManager.AddComponentData(entity, voxObj);
-                state.EntityManager.AddComponentData(entity, 
-                    new LocalToWorld 
-                    { 
-                        Value = float4x4.TRS(randomVoxGenerator.RandPos(0, 10), quaternion.identity, voxelSize) 
-                    });
+                state.EntityManager.AddComponentData(entity, new LocalTransform
+                {
+                    Position = randomVoxGenerator.RandPos(0, 10),
+                    Rotation = quaternion.identity,
+                    Scale = voxelSize,
+                });
+                state.EntityManager.AddComponent(entity, typeof(LocalToWorld));
+
+                var map = new NativeParallelHashMap<int3, StandardMaterialData>(100000, Allocator.Persistent);
+                map.Add(0, new StandardMaterialData
+                {
+                    albedo = new float3(0.5f, 0, 0),
+                    specular = 0,
+                    emission = 0,
+                    smoothness = 0,
+                    metallic = 0,
+                    ior = 0,
+                });
+                #endregion
 
                 #region physics
                 BoxGeometry boxGeometry = new BoxGeometry
@@ -75,6 +91,7 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                 {
                     Value = collider
                 };
+                state.EntityManager.AddSharedComponentManaged(entity, new PhysicsWorldIndex { Value=0 });
                 state.EntityManager.AddComponentData(entity, physicsCollider);
                 state.EntityManager.AddComponentData(entity, new PhysicsVelocity
                 {
@@ -90,18 +107,15 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                 
                 PhysicsMass pm = PhysicsMass.CreateDynamic(physicsCollider.MassProperties, voxelSize * 1.2f);
                 state.EntityManager.AddComponentData(entity, pm);
+
+                state.EntityManager.AddComponentData(entity, new PhysicsDamping
+                {
+                    Linear = 0.01f
+                });
+                
                 #endregion
 
-                var map = new NativeParallelHashMap<int3, StandardMaterialData>(100000, Allocator.Persistent);
-                map.Add(0, new StandardMaterialData
-                {
-                    albedo = new float3(0.5f, 0, 0),
-                    specular = 0,
-                    emission = 0,
-                    smoothness = 0,
-                    metallic = 0,
-                    ior = 0,
-                });
+                
                 //ECSVoxelData.Instance.standardMap.Add(entity.Index, map);
             }
 
