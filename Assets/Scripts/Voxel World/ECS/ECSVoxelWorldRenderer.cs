@@ -194,7 +194,7 @@ namespace VoxelWorld.Rendering
             CreateResources();
             if (Camera.main.transform.hasChanged)
             {
-                convergenceStep = 0;
+                //convergenceStep = 0;
                 Camera.main.transform.hasChanged = false;
             }
         }

@@ -11,6 +11,7 @@ using Unity.Transforms;
 using VoxelWorld.Rendering.Structs;
 using Unity.Jobs;
 using System;
+using static Unity.Physics.CompoundCollider;
 
 namespace VoxelWorld.ECS.VoxelObject.Systems
 {
@@ -19,12 +20,14 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
     {
         EntityQuery query_renderentities;
         RandomVoxelGenerator randomVoxGenerator;
+        float lastTime;
 
         [BurstCompile]
         void ISystem.OnCreate(ref SystemState state)
         {
             randomVoxGenerator = new RandomVoxelGenerator(24451245);
             query_renderentities = state.GetEntityQuery(ComponentType.ReadOnly<VoxelObjectComponent>(), ComponentType.ReadOnly<LocalToWorld>());
+            lastTime = Time.time;
         }
 
         [BurstCompile]
@@ -40,64 +43,11 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
         void ISystem.OnUpdate(ref SystemState state) 
         {
             //if (ECSVoxelData.Instance == null) return;
-            if (Input.GetMouseButtonDown(0))
+            if (Input.GetMouseButton(0) && lastTime + 0.01f < Time.time)
             {
-                Entity entity = state.EntityManager.CreateEntity();
-                
-                float voxelSize = 0.5f;
-
-                #region Voxel Obj
-
-                state.EntityManager.AddComponentData(entity, new LocalTransform
-                {
-                    Position = randomVoxGenerator.RandPos(0, 10),
-                    Rotation = quaternion.identity,
-                    Scale = 1,
-                });
-                state.EntityManager.AddComponent(entity, typeof(LocalToWorld));
-
-                var voxObj = new VoxelObjectComponent(voxelSize);
-                CreateRandomVoxelObject(ref state, entity, ref voxObj, state.EntityManager.GetComponentData<LocalToWorld>(entity));
-
-                state.EntityManager.AddComponentData(entity, voxObj);
-
-                var map = new NativeParallelHashMap<int3, StandardMaterialData>(100000, Allocator.Persistent);
-                map.Add(0, new StandardMaterialData
-                {
-                    albedo = new float3(0.5f, 0, 0),
-                    specular = 0,
-                    emission = 0,
-                    smoothness = 0,
-                    metallic = 0,
-                    ior = 0,
-                });
-                #endregion
-
-                #region physics
-                
-                state.EntityManager.AddSharedComponentManaged(entity, new PhysicsWorldIndex { Value=0 });
-                state.EntityManager.AddComponentData(entity, new PhysicsVelocity
-                {
-                    Linear = 0,
-                    Angular = 0,
-                });
-
-                state.EntityManager.AddComponentData(entity, new PhysicsGravityFactor
-                {
-                    Value = 0
-                });
-
-                
-                state.EntityManager.AddComponentData(entity, new PhysicsDamping
-                {
-                    Linear = 0.01f
-                });
-                
-                #endregion
-
-                
-                //ECSVoxelData.Instance.standardMap.Add(entity.Index, map);
-            }
+                lastTime = Time.time;
+                CreateRandomVoxelObject(ref state); 
+            }   
 
             int count = query_renderentities.CalculateEntityCount();
             #region Assembler
@@ -158,8 +108,65 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
             Debug.Log(count);
         }
 
-        void CreateRandomVoxelObject(ref SystemState state, Entity entity, ref VoxelObjectComponent voxObj, LocalToWorld parentL2W)
+        void CreateRandomVoxelObject(ref SystemState state)
         {
+            Entity entity = state.EntityManager.CreateEntity();
+
+            float voxelSize = 0.5f;
+
+            #region Voxel Obj
+
+            state.EntityManager.AddComponentData(entity, new LocalTransform
+            {
+                Position = randomVoxGenerator.RandPos(0, 10),
+                Rotation = quaternion.identity,
+                Scale = 1,
+            });
+            state.EntityManager.AddComponent(entity, typeof(LocalToWorld));
+
+            var voxObj = new VoxelObjectComponent(voxelSize);
+            FillRandomVoxelObject(ref state, entity, ref voxObj, state.EntityManager.GetComponentData<LocalToWorld>(entity));
+
+            state.EntityManager.AddComponentData(entity, voxObj);
+
+            var map = new NativeParallelHashMap<int3, StandardMaterialData>(100000, Allocator.Persistent);
+            map.Add(0, new StandardMaterialData
+            {
+                albedo = new float3(0.5f, 0, 0),
+                specular = 0,
+                emission = 0,
+                smoothness = 0,
+                metallic = 0,
+                ior = 0,
+            });
+            #endregion
+
+            #region physics
+
+            state.EntityManager.AddSharedComponentManaged(entity, new PhysicsWorldIndex { Value = 0 });
+            state.EntityManager.AddComponentData(entity, new PhysicsVelocity
+            {
+                Linear = 0,
+                Angular = 0,
+            });
+
+            state.EntityManager.AddComponentData(entity, new PhysicsGravityFactor
+            {
+                Value = 0
+            });
+
+
+            state.EntityManager.AddComponentData(entity, new PhysicsDamping
+            {
+                Linear = 0.01f
+            });
+
+            #endregion
+        }
+
+        void FillRandomVoxelObject(ref SystemState state, Entity entity, ref VoxelObjectComponent voxObj, LocalToWorld parentL2W)
+        {
+            NativeList<ColliderBlobInstance> colliders = new NativeList<ColliderBlobInstance>(Allocator.Temp);
             int3 dim = randomVoxGenerator.random.NextInt3(new int3(-3, -2, -4), new int3(1, 3, 2));
             if (dim.x == 0) dim.x++;
             if (dim.y == 0) dim.y++;
@@ -195,14 +202,30 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                             });
                         }
 
-                        AddCollider(offset, ref state, entity, voxObj, parentL2W);
+                        AddCollider(offset, ref state, entity, voxObj, parentL2W, ref colliders);
                     }
                 }
             }
+            var tempCollArray = colliders.ToArray(Allocator.Temp);
+            var blobAssetRef = CompoundCollider.Create(tempCollArray);
+
+            PhysicsCollider physicsCollider = new PhysicsCollider
+            {
+                Value = blobAssetRef
+            };
+
+            PhysicsMass pm = PhysicsMass.CreateDynamic(physicsCollider.MassProperties, voxObj.voxelSize * 2);
+
+            state.EntityManager.AddComponentData(entity, physicsCollider);
+            state.EntityManager.AddComponentData(entity, pm);
+            
+            tempCollArray.Dispose();
+            colliders.Dispose();
         }
 
-        void AddCollider(int3 grid, ref SystemState state, Entity parent, VoxelObjectComponent parentVoxObj, LocalToWorld parentL2W)
+        void AddCollider(int3 grid, ref SystemState state, Entity parent, VoxelObjectComponent parentVoxObj, LocalToWorld parentL2W, ref NativeList<ColliderBlobInstance> colliders)
         {
+            #region Voxel Engine Logic Stuff
             Entity entity = state.EntityManager.CreateEntity();
             state.EntityManager.AddComponent(entity, typeof(VoxelObjectColliderComponent));
             // parent it
@@ -215,7 +238,9 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
             };
             state.EntityManager.AddComponentData(entity, ltrans);
             state.EntityManager.AddComponent(entity, typeof(LocalToWorld));
+            #endregion
 
+            #region Unity #CS Physics Stuff
             BoxGeometry boxGeometry = new BoxGeometry
             {
                 Center = parentVoxObj.LocalGridToWorldPos(grid, parentL2W.Value),
@@ -224,19 +249,30 @@ namespace VoxelWorld.ECS.VoxelObject.Systems
                 Orientation = parentL2W.Rotation,
             };
             var collider = Unity.Physics.BoxCollider.Create(boxGeometry, CollisionFilter.Default);
-            PhysicsCollider physicsCollider = new PhysicsCollider
+            ColliderBlobInstance colliderBlob = new ColliderBlobInstance()
+            {
+                Collider = collider,
+                Entity = parent,
+                CompoundFromChild = new RigidTransform
+                {
+                    rot = ltrans.Rotation,
+                    pos = ltrans.Position
+                }
+            };
+            colliders.Add(colliderBlob);
+            /*PhysicsCollider physicsCollider = new PhysicsCollider
             {
                 Value = collider
-            };
+            };*/
 
-            state.EntityManager.AddComponentData(entity, physicsCollider);
+            //state.EntityManager.AddComponentData(entity, physicsCollider);
 
 
-            PhysicsMass pm = PhysicsMass.CreateDynamic(physicsCollider.MassProperties, parentVoxObj.voxelSize * 2);
-            state.EntityManager.AddComponentData(entity, pm);
+            //PhysicsMass pm = PhysicsMass.CreateDynamic(physicsCollider.MassProperties, parentVoxObj.voxelSize * 2);
+            //state.EntityManager.AddComponentData(entity, pm);
 
             state.EntityManager.AddSharedComponentManaged(entity, new PhysicsWorldIndex { Value = 0 });
-
+            #endregion
         }
     }
 

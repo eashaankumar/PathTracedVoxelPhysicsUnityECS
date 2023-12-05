@@ -366,7 +366,7 @@ MonoBehaviour:
   rayTracingMetaShader: {fileID: 4807578003741378534, guid: f086a1cf54352b24caa3c063a5ae4342, type: 3}
   topColor: {r: 0, g: 0.6862745, b: 1, a: 0}
   bottomColor: {r: 1, g: 1, b: 1, a: 0}
-  ptRes: 1
+  ptRes: 2
   bounceCountOpaque: 5
   bounceCountTransparent: 8
   mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
