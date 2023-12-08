@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 using VoxelWorld.Rendering.Enums;
@@ -58,7 +59,7 @@ namespace VoxelWorld.Rendering.Structs
         }
     }
 
-    public struct StandardMaterialData
+    public struct StandardMaterialData : IComponentData
     {
         public float3 albedo;
         public float3 specular;
@@ -76,7 +77,7 @@ namespace VoxelWorld.Rendering.Structs
         }
     };
 
-    public struct GlassMaterialData
+    public struct GlassMaterialData : IComponentData
     {
         public float3 albedo;
         public float3 emission;

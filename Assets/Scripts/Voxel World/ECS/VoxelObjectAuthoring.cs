@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -12,14 +13,14 @@ namespace VoxelWorld.ECS.VoxelObject
     public struct VoxelObjectComponent : IComponentData, IDisposable
     {
         public float voxelSize;
-        public NativeParallelHashMap<int3, StandardMaterialData> standardVoxels;
-        public NativeParallelHashMap<int3, GlassMaterialData> glassVoxels;
+        public UnsafeHashMap<int3, StandardMaterialData> standardVoxels;
+        public UnsafeHashMap<int3, GlassMaterialData> glassVoxels;
 
         public VoxelObjectComponent(float vs)
         {
             voxelSize = vs;
-            standardVoxels = new NativeParallelHashMap<int3, StandardMaterialData>(1, Allocator.Persistent);
-            glassVoxels = new NativeParallelHashMap<int3, GlassMaterialData>(1, Allocator.Persistent);
+            standardVoxels = new UnsafeHashMap<int3, StandardMaterialData>(1, Allocator.Persistent);
+            glassVoxels = new UnsafeHashMap<int3, GlassMaterialData>(1, Allocator.Persistent);
             
         }
 
